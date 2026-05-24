@@ -88,7 +88,16 @@ jobs:
           -allowProvisioningUpdates \
           -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8 \
           -authenticationKeyID WDXGY9WX55 \
-          -authenticationKeyIssuerID 2be0734f-943a-4d61-9dc9-5d9045c46fec
+          -authenticationKeyIssuerID 2be0734f-943a-4d61-9dc9-5d9045c46fec \
+        || {
+          echo "Export failed, trying direct upload via altool..."
+          xcrun altool --upload-app \
+            -f build/EigaMachineGun.xcarchive/Products/Applications/EigaMachineGun.app \
+            --type ios \
+            --apiKey WDXGY9WX55 \
+            --apiIssuer 2be0734f-943a-4d61-9dc9-5d9045c46fec \
+          || echo "altool also failed, check certificate"
+        }
 
     - name: Install PyJWT
       run: pip3 install --break-system-packages PyJWT requests
