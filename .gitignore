@@ -10,3 +10,4 @@ DerivedData/
 .DS_Store
 *.p8
 *.p12
+.omc/
