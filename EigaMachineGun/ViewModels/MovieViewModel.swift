@@ -16,6 +16,7 @@ class MovieViewModel: ObservableObject {
     @Published var selectedGenre: Genre = allGenres[0]
     @Published var feedMode: FeedMode = .top
     @Published var isLoading: Bool = false
+    @Published var errorMessage: String? = nil
     @Published var favorites: Set<Int> = []
 
     private var timer: Timer?
@@ -33,6 +34,7 @@ class MovieViewModel: ObservableObject {
     func loadMovies() async {
         guard !isLoading else { return }
         isLoading = true
+        errorMessage = nil
 
         do {
             switch feedMode {
@@ -46,10 +48,14 @@ class MovieViewModel: ObservableObject {
 
             // Filter out movies without artwork
             movies = movies.filter { $0.artworkUrl100 != nil }
+            if movies.isEmpty {
+                errorMessage = "映画が見つかりませんでした"
+            }
             currentIndex = 0
             startTimer()
         } catch {
             print("Failed to load movies: \(error)")
+            errorMessage = "読み込みに失敗しました。\nネットワーク接続を確認してください。"
         }
 
         isLoading = false

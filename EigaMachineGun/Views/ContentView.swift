@@ -12,6 +12,8 @@ struct ContentView: View {
 
             if viewModel.isLoading && viewModel.movies.isEmpty {
                 loadingView
+            } else if let error = viewModel.errorMessage, viewModel.movies.isEmpty {
+                errorView(error)
             } else if let movie = viewModel.currentMovie {
                 movieView(movie)
                     .gesture(
@@ -229,6 +231,28 @@ struct ContentView: View {
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
+        }
+    }
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 50))
+                .foregroundColor(.red.opacity(0.7))
+            Text(message)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+            Button {
+                Task { await viewModel.loadMovies() }
+            } label: {
+                Text("リトライ")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Capsule().fill(Color.red))
+            }
         }
     }
 
