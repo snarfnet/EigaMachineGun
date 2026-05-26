@@ -5,6 +5,13 @@ class MovieService {
     static let searchURL = "https://itunes.apple.com/search"
     static let rssBaseURL = "https://rss.applemarketingtools.com/api/v2"
 
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        return URLSession(configuration: config)
+    }()
+
     // Search movies via iTunes Search API
     static func searchMovies(term: String, country: String = "jp", limit: Int = 100, offset: Int = 0) async throws -> [Movie] {
         let encoded = term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? term
@@ -14,7 +21,7 @@ class MovieService {
             throw URLError(.badURL)
         }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, _) = try await session.data(from: url)
         let response = try JSONDecoder().decode(iTunesResponse.self, from: data)
         return response.results
     }
@@ -27,7 +34,7 @@ class MovieService {
             throw URLError(.badURL)
         }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, _) = try await session.data(from: url)
         let rssResponse = try JSONDecoder().decode(RSSFeedResponse.self, from: data)
 
         // Convert RSS movies to full Movie objects by searching each
@@ -42,7 +49,7 @@ class MovieService {
                 let lookupURL = "https://itunes.apple.com/lookup?id=\(idString)&country=jp&media=movie"
                 if let url = URL(string: lookupURL) {
                     do {
-                        let (lookupData, _) = try await URLSession.shared.data(from: url)
+                        let (lookupData, _) = try await session.data(from: url)
                         let lookupResponse = try JSONDecoder().decode(iTunesResponse.self, from: lookupData)
                         movies.append(contentsOf: lookupResponse.results)
                     } catch {
@@ -54,6 +61,11 @@ class MovieService {
 
         return movies
     }
+
+    // Built-in sample movies as ultimate fallback when API is unavailable
+    static let sampleMovies: [Movie] = [
+        Movie(trackId: 1, trackName: "Sample Movie", artistName: "Director", artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Video126/v4/a0/a0/a0/a0a0a0a0-0000-0000-0000-000000000000/100x100bb.jpg", longDescription: "映画マシンガンへようこそ。ネットワーク接続を確認して、最新の映画情報を読み込んでください。画面を左右にスワイプして映画を切り替えられます。", shortDescription: nil, releaseDate: "2026-01-01T00:00:00Z", primaryGenreName: "Drama", contentAdvisoryRating: "G", trackPrice: nil, previewUrl: nil, trackViewUrl: nil),
+    ]
 
     // Search with multiple terms for variety
     static func fetchVariety(genre: Genre, offset: Int = 0) async throws -> [Movie] {

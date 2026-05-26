@@ -36,28 +36,48 @@ class MovieViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        do {
-            switch feedMode {
-            case .top:
-                movies = try await MovieService.fetchTopMovies()
-            case .search:
-                movies = try await MovieService.searchMovies(term: selectedGenre.searchTerm, limit: 200)
-            case .variety:
-                movies = try await MovieService.fetchVariety(genre: selectedGenre)
+        // Try up to 3 times with delay
+        for attempt in 1...3 {
+            do {
+                var result: [Movie] = []
+                switch feedMode {
+                case .top:
+                    result = try await MovieService.fetchTopMovies()
+                case .search:
+                    result = try await MovieService.searchMovies(term: selectedGenre.searchTerm, limit: 200)
+                case .variety:
+                    result = try await MovieService.fetchVariety(genre: selectedGenre)
+                }
+                result = result.filter { $0.artworkUrl100 != nil }
+                if !result.isEmpty {
+                    movies = result
+                    break
+                }
+            } catch {
+                print("Attempt \(attempt) failed: \(error)")
+                if attempt < 3 {
+                    try? await Task.sleep(for: .seconds(2))
+                }
             }
-
-            // Filter out movies without artwork
-            movies = movies.filter { $0.artworkUrl100 != nil }
-            if movies.isEmpty {
-                errorMessage = "映画が見つかりませんでした"
-            }
-            currentIndex = 0
-            startTimer()
-        } catch {
-            print("Failed to load movies: \(error)")
-            errorMessage = "読み込みに失敗しました。\nネットワーク接続を確認してください。"
         }
 
+        // Fallback: simple search if main feed failed
+        if movies.isEmpty {
+            do {
+                let fallback = try await MovieService.searchMovies(term: "movie", limit: 50)
+                movies = fallback.filter { $0.artworkUrl100 != nil }
+            } catch {
+                print("Fallback search also failed: \(error)")
+            }
+        }
+
+        // Ultimate fallback: built-in sample data
+        if movies.isEmpty {
+            movies = MovieService.sampleMovies
+        }
+
+        currentIndex = 0
+        startTimer()
         isLoading = false
     }
 
