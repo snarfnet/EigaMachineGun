@@ -61,19 +61,12 @@ class MovieViewModel: ObservableObject {
             }
         }
 
-        // Fallback: simple search if main feed failed
+        // Fallback: try multiple diverse search terms
         if movies.isEmpty {
-            do {
-                let fallback = try await MovieService.searchMovies(term: "movie", limit: 50)
-                movies = fallback.filter { $0.artworkUrl100 != nil }
-            } catch {
-                print("Fallback search also failed: \(error)")
+            let fallback = await MovieService.fetchFallbackMovies()
+            if !fallback.isEmpty {
+                movies = fallback
             }
-        }
-
-        // Ultimate fallback: built-in sample data
-        if movies.isEmpty {
-            movies = MovieService.sampleMovies
         }
 
         currentIndex = 0

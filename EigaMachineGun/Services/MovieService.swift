@@ -62,10 +62,33 @@ class MovieService {
         return movies
     }
 
-    // Built-in sample movies as ultimate fallback when API is unavailable
-    static let sampleMovies: [Movie] = [
-        Movie(trackId: 1, trackName: "Sample Movie", artistName: "Director", artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Video126/v4/a0/a0/a0/a0a0a0a0-0000-0000-0000-000000000000/100x100bb.jpg", longDescription: "映画マシンガンへようこそ。ネットワーク接続を確認して、最新の映画情報を読み込んでください。画面を左右にスワイプして映画を切り替えられます。", shortDescription: nil, releaseDate: "2026-01-01T00:00:00Z", primaryGenreName: "Drama", contentAdvisoryRating: "G", trackPrice: nil, previewUrl: nil, trackViewUrl: nil),
+    // Fallback search terms when primary feed fails
+    static let fallbackSearchTerms = [
+        "アクション映画", "恋愛映画", "アニメ映画", "コメディ映画",
+        "SF映画", "ホラー映画", "ドラマ映画", "ファンタジー映画",
+        "action movie", "comedy movie", "anime", "drama film"
     ]
+
+    // Try multiple search terms to get movies when primary methods fail
+    static func fetchFallbackMovies() async -> [Movie] {
+        var allMovies: [Movie] = []
+        var seenIds: Set<Int> = []
+        for term in fallbackSearchTerms {
+            if allMovies.count >= 30 { break }
+            do {
+                let results = try await searchMovies(term: term, limit: 20)
+                for movie in results where movie.artworkUrl100 != nil {
+                    if !seenIds.contains(movie.id) {
+                        seenIds.insert(movie.id)
+                        allMovies.append(movie)
+                    }
+                }
+            } catch {
+                continue
+            }
+        }
+        return allMovies.shuffled()
+    }
 
     // Search with multiple terms for variety
     static func fetchVariety(genre: Genre, offset: Int = 0) async throws -> [Movie] {
