@@ -35,23 +35,6 @@ jobs:
     - name: Generate Xcode project
       run: xcodegen generate
 
-    - name: Import Distribution Certificate
-      env:
-        CERT_BASE64: ${{ secrets.DIST_CERT_BASE64 }}
-        CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
-        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-      run: |
-        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-        security set-keychain-settings -t 3600 -u build.keychain
-        echo "$CERT_BASE64" | base64 -D > cert.p12
-        security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
-        security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-        rm cert.p12
-        echo "Imported certificates:"
-        security find-identity -v -p codesigning build.keychain
-
     - name: Setup ASC API Key
       env:
         ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
@@ -70,9 +53,7 @@ jobs:
           -authenticationKeyID ${ASC_KEY_ID} \
           -authenticationKeyIssuerID ${ASC_ISSUER_ID} \
           CODE_SIGNING_ALLOWED=YES \
-          CODE_SIGN_STYLE=Manual \
-          CODE_SIGN_IDENTITY="Apple Distribution" \
-          DEVELOPMENT_TEAM=83VGKGSQUH
+          CODE_SIGN_STYLE=Automatic
 
     - name: Export & Upload
       run: |
@@ -86,14 +67,7 @@ jobs:
           <key>destination</key>
           <string>upload</string>
           <key>signingStyle</key>
-          <string>manual</string>
-          <key>teamID</key>
-          <string>83VGKGSQUH</string>
-          <key>provisioningProfiles</key>
-          <dict>
-            <key>com.tokyonasu.eigamachinegun</key>
-            <string>EigaMachineGun AppStore</string>
-          </dict>
+          <string>automatic</string>
         </dict>
         </plist>
         PLIST
@@ -109,7 +83,5 @@ jobs:
 
     - name: Cleanup
       if: always()
-      run: |
-        security delete-keychain build.keychain 2>/dev/null || true
-        rm -rf ~/private_keys
+      run: rm -rf ~/private_keys
       continue-on-error: true
