@@ -69,6 +69,10 @@ class MovieViewModel: ObservableObject {
             }
         }
 
+        if movies.isEmpty {
+            errorMessage = "映画データを取得できませんでした。\nネットワーク接続を確認してください。"
+        }
+
         currentIndex = 0
         startTimer()
         isLoading = false
