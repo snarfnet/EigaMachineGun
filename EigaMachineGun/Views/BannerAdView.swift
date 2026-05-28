@@ -27,23 +27,25 @@ private struct BannerViewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> BannerView {
         let banner = BannerView(adSize: adSize)
         banner.adUnitID = adUnitID
-        banner.rootViewController = UIApplication.shared.topViewController
+        banner.rootViewController = Self.findRootViewController()
         banner.load(Request())
         return banner
     }
 
     func updateUIView(_ uiView: BannerView, context: Context) {
         uiView.adSize = adSize
-        uiView.rootViewController = UIApplication.shared.topViewController
+        uiView.rootViewController = Self.findRootViewController()
     }
-}
 
-private extension UIApplication {
-    var topViewController: UIViewController? {
-        connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow }?
-            .rootViewController
+    static func findRootViewController() -> UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else {
+            return UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?
+                .keyWindow?
+                .rootViewController
+        }
+        return scene.keyWindow?.rootViewController
     }
 }
