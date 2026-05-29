@@ -70,6 +70,10 @@ class MovieViewModel: ObservableObject {
         }
 
         if movies.isEmpty {
+            movies = MovieService.offlineMovies
+        }
+
+        if movies.isEmpty {
             errorMessage = "映画データを取得できませんでした。\nネットワーク接続を確認してください。"
         }
 
