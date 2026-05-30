@@ -36,8 +36,8 @@ class MovieViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        // Try up to 3 times with delay
-        for attempt in 1...3 {
+        // Try up to 2 times with delay
+        for attempt in 1...2 {
             do {
                 var result: [Movie] = []
                 switch feedMode {
@@ -55,7 +55,7 @@ class MovieViewModel: ObservableObject {
                 }
             } catch {
                 print("Attempt \(attempt) failed: \(error)")
-                if attempt < 3 {
+                if attempt < 2 {
                     try? await Task.sleep(for: .seconds(2))
                 }
             }
