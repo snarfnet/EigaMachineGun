@@ -80,7 +80,22 @@ struct ContentView: View {
                             .foregroundColor(.white.opacity(0.3))
                     )
                 default:
-                    Color.black.overlay(ProgressView().tint(.red))
+                    if movie.posterURL == nil {
+                        Color.gray.overlay(
+                            VStack(spacing: 8) {
+                                Image(systemName: "film")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.white.opacity(0.4))
+                                Text(movie.name)
+                                    .font(.caption.bold())
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                        )
+                    } else {
+                        Color.black.overlay(ProgressView().tint(.red))
+                    }
                 }
             }
             .id(movie.id)
