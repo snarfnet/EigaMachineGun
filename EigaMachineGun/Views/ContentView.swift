@@ -86,7 +86,7 @@ struct ContentView: View {
                                 Image(systemName: "film")
                                     .font(.system(size: 48))
                                     .foregroundColor(.white.opacity(0.4))
-                                Text(movie.name)
+                                Text(movie.trackName)
                                     .font(.caption.bold())
                                     .foregroundColor(.white.opacity(0.7))
                                     .multilineTextAlignment(.center)
