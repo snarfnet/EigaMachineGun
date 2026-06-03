@@ -43,9 +43,9 @@ private struct BannerViewContainer: UIViewRepresentable {
             return UIApplication.shared.connectedScenes
                 .compactMap { $0 as? UIWindowScene }
                 .first?
-                .windows.first(where: \.isKeyWindow)?
+                .keyWindow?
                 .rootViewController
         }
-        return scene.windows.first(where: \.isKeyWindow)?.rootViewController
+        return scene.keyWindow?.rootViewController
     }
 }
