@@ -36,8 +36,17 @@ class MovieViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        // Try up to 2 times with delay
-        for attempt in 1...2 {
+        // Screenshot mode: show offline movies immediately
+        if ProcessInfo.processInfo.arguments.contains("SCREENSHOT_MODE") {
+            movies = MovieService.offlineMovies
+            currentIndex = 0
+            startTimer()
+            isLoading = false
+            return
+        }
+
+        // Try up to 3 times with delay
+        for attempt in 1...3 {
             do {
                 var result: [Movie] = []
                 switch feedMode {
@@ -48,14 +57,18 @@ class MovieViewModel: ObservableObject {
                 case .variety:
                     result = try await MovieService.fetchVariety(genre: selectedGenre)
                 }
-                result = result.filter { $0.artworkUrl100 != nil }
-                if !result.isEmpty {
+                // Prefer movies with artwork, but keep all if none have artwork
+                let withArtwork = result.filter { $0.artworkUrl100 != nil }
+                if !withArtwork.isEmpty {
+                    movies = withArtwork
+                    break
+                } else if !result.isEmpty {
                     movies = result
                     break
                 }
             } catch {
                 print("Attempt \(attempt) failed: \(error)")
-                if attempt < 2 {
+                if attempt < 3 {
                     try? await Task.sleep(for: .seconds(2))
                 }
             }
@@ -69,6 +82,7 @@ class MovieViewModel: ObservableObject {
             }
         }
 
+        // Final fallback: always show offline movies so the app is never empty
         if movies.isEmpty {
             movies = MovieService.offlineMovies
         }

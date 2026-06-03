@@ -1,0 +1,120 @@
+name: Take and Upload Screenshots
+
+on:
+  workflow_dispatch:
+
+env:
+  ASC_KEY_ID: "WDXGY9WX55"
+  ASC_ISSUER_ID: "2be0734f-943a-4d61-9dc9-5d9045c46fec"
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: |
+        XCODE_APP=$(ls /Applications/ | grep "^Xcode" | sort -V | tail -1)
+        sudo xcode-select -s "/Applications/$XCODE_APP"
+        xcodebuild -version
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode project
+      run: xcodegen generate
+
+    - name: Boot iPhone 16 Pro Max Simulator
+      run: |
+        DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 16 Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
+        if [ -z "$DEVICE_ID" ]; then
+          echo "iPhone 16 Pro Max not found, trying iPhone 15 Pro Max"
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15 Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
+        fi
+        echo "IPHONE_DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+        echo "iPhone Device: $DEVICE_ID"
+        xcrun simctl boot "$DEVICE_ID" || true
+        xcrun simctl ui "$DEVICE_ID" appearance dark || true
+        sleep 15
+
+    - name: Build for iPhone Simulator
+      run: |
+        xcodebuild build \
+          -scheme EigaMachineGun \
+          -configuration Debug \
+          -destination "id=${{ env.IPHONE_DEVICE_ID }}" \
+          -derivedDataPath build/DerivedData \
+          | xcpretty || true
+
+    - name: Take iPhone Screenshots
+      run: |
+        mkdir -p screenshots
+        APP_PATH=$(find build/DerivedData -name "EigaMachineGun.app" -not -path "*/PlugIns/*" | head -1)
+        echo "App: $APP_PATH"
+        xcrun simctl install "${{ env.IPHONE_DEVICE_ID }}" "$APP_PATH"
+        xcrun simctl launch "${{ env.IPHONE_DEVICE_ID }}" com.tokyonasu.eigamachinegun SCREENSHOT_MODE
+        sleep 8
+        xcrun simctl io "${{ env.IPHONE_DEVICE_ID }}" screenshot screenshots/ss1.png
+        sleep 4
+        xcrun simctl io "${{ env.IPHONE_DEVICE_ID }}" screenshot screenshots/ss2.png
+        sleep 4
+        xcrun simctl io "${{ env.IPHONE_DEVICE_ID }}" screenshot screenshots/ss3.png
+        echo "iPhone screenshots:"
+        ls -lh screenshots/
+
+    - name: Shutdown iPhone Simulator
+      run: xcrun simctl shutdown "${{ env.IPHONE_DEVICE_ID }}" || true
+
+    - name: Boot iPad Pro 13-inch Simulator
+      run: |
+        DEVICE_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "13" | head -1 | grep -oE '[A-F0-9-]{36}')
+        if [ -z "$DEVICE_ID" ]; then
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "12.9" | head -1 | grep -oE '[A-F0-9-]{36}')
+        fi
+        echo "IPAD_DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+        echo "iPad Device: $DEVICE_ID"
+        xcrun simctl boot "$DEVICE_ID" || true
+        xcrun simctl ui "$DEVICE_ID" appearance dark || true
+        sleep 15
+
+    - name: Build for iPad Simulator
+      run: |
+        xcodebuild build \
+          -scheme EigaMachineGun \
+          -configuration Debug \
+          -destination "id=${{ env.IPAD_DEVICE_ID }}" \
+          -derivedDataPath build/DerivedDataiPad \
+          | xcpretty || true
+
+    - name: Take iPad Screenshots
+      run: |
+        APP_PATH=$(find build/DerivedDataiPad -name "EigaMachineGun.app" -not -path "*/PlugIns/*" | head -1)
+        echo "App: $APP_PATH"
+        xcrun simctl install "${{ env.IPAD_DEVICE_ID }}" "$APP_PATH"
+        xcrun simctl launch "${{ env.IPAD_DEVICE_ID }}" com.tokyonasu.eigamachinegun SCREENSHOT_MODE
+        sleep 8
+        xcrun simctl io "${{ env.IPAD_DEVICE_ID }}" screenshot screenshots/ipad_ss1.png
+        sleep 4
+        xcrun simctl io "${{ env.IPAD_DEVICE_ID }}" screenshot screenshots/ipad_ss2.png
+        sleep 4
+        xcrun simctl io "${{ env.IPAD_DEVICE_ID }}" screenshot screenshots/ipad_ss3.png
+        echo "iPad screenshots:"
+        ls -lh screenshots/
+
+    - name: Upload Screenshots as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshots
+        path: screenshots/
+
+    - name: Install PyJWT
+      run: pip3 install --break-system-packages PyJWT requests Pillow
+
+    - name: Upload to ASC
+      env:
+        ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+      run: |
+        echo "$ASC_API_KEY_CONTENT" | base64 -D > /tmp/asc_key.p8
+        python3 scripts/upload_screenshots.py

@@ -113,7 +113,7 @@ class MovieService {
             if allMovies.count >= 30 { break }
             do {
                 let results = try await searchMovies(term: term, limit: 20)
-                for movie in results where movie.artworkUrl100 != nil {
+                for movie in results {
                     if !seenIds.contains(movie.id) {
                         seenIds.insert(movie.id)
                         allMovies.append(movie)
