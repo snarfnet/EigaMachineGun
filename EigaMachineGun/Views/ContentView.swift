@@ -56,10 +56,12 @@ struct ContentView: View {
             await viewModel.loadMovies()
         }
 
-            // Banner ad at bottom
-            BannerAdView()
-                .frame(height: 50)
-                .background(Color.black)
+            // Banner ad at bottom (iPhone only - AdMob not initialized on iPad)
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                BannerAdView()
+                    .frame(height: 50)
+                    .background(Color.black)
+            }
         }
     }
 
