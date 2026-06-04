@@ -45,6 +45,13 @@ class MovieViewModel: ObservableObject {
             return
         }
 
+        // Show offline content immediately so the app is never blank while loading
+        if movies.isEmpty {
+            movies = MovieService.offlineMovies
+            currentIndex = 0
+            startTimer()
+        }
+
         // Try up to 3 times with delay
         for attempt in 1...3 {
             do {
