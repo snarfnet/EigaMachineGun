@@ -82,22 +82,18 @@ struct ContentView: View {
                             .foregroundColor(.white.opacity(0.3))
                     )
                 default:
-                    if movie.posterURL == nil {
-                        Color.gray.overlay(
-                            VStack(spacing: 8) {
-                                Image(systemName: "film")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.white.opacity(0.4))
-                                Text(movie.trackName)
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                        )
-                    } else {
-                        Color.black.overlay(ProgressView().tint(.red))
-                    }
+                    Color.gray.overlay(
+                        VStack(spacing: 8) {
+                            Image(systemName: "film")
+                                .font(.system(size: 48))
+                                .foregroundColor(.white.opacity(0.4))
+                            Text(movie.trackName)
+                                .font(.caption.bold())
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                    )
                 }
             }
             .id(movie.id)
