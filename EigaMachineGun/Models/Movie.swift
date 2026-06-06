@@ -24,14 +24,35 @@ struct Movie: Codable, Identifiable {
 
     var posterURL: URL? {
         guard let url = artworkUrl100 else { return nil }
-        // Replace 100x100 with 600x600 for high-res
-        let hiRes = url.replacingOccurrences(of: "100x100", with: "600x600")
+        // Replace any NxN size pattern with 600x600 for high-res
+        let hiRes = url.replacingOccurrences(
+            of: #"\d+x\d+(bb|cc|sr)"#,
+            with: "600x600$1",
+            options: .regularExpression
+        )
+        // If regex didn't match, try the common patterns
+        if hiRes == url {
+            let fallback = url
+                .replacingOccurrences(of: "100x100", with: "600x600")
+                .replacingOccurrences(of: "200x200", with: "600x600")
+            return URL(string: fallback)
+        }
         return URL(string: hiRes)
     }
 
     var backdropURL: URL? {
         guard let url = artworkUrl100 else { return nil }
-        let hiRes = url.replacingOccurrences(of: "100x100", with: "1200x1200")
+        let hiRes = url.replacingOccurrences(
+            of: #"\d+x\d+(bb|cc|sr)"#,
+            with: "1200x1200$1",
+            options: .regularExpression
+        )
+        if hiRes == url {
+            let fallback = url
+                .replacingOccurrences(of: "100x100", with: "1200x1200")
+                .replacingOccurrences(of: "200x200", with: "1200x1200")
+            return URL(string: fallback)
+        }
         return URL(string: hiRes)
     }
 
