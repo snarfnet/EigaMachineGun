@@ -5,10 +5,9 @@ import AppTrackingTransparency
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            DispatchQueue.main.async {
-                MobileAds.shared.start { _ in }
-            }
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return true }
+        DispatchQueue.main.async {
+            MobileAds.shared.start { _ in }
         }
         return true
     }

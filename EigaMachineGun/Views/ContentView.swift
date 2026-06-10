@@ -76,24 +76,9 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
                 case .failure:
-                    Color.gray.overlay(
-                        Image(systemName: "film")
-                            .font(.system(size: 60))
-                            .foregroundColor(.white.opacity(0.3))
-                    )
+                    moviePlaceholder(movie)
                 default:
-                    Color.gray.overlay(
-                        VStack(spacing: 8) {
-                            Image(systemName: "film")
-                                .font(.system(size: 48))
-                                .foregroundColor(.white.opacity(0.4))
-                            Text(movie.trackName)
-                                .font(.caption.bold())
-                                .foregroundColor(.white.opacity(0.7))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                    )
+                    moviePlaceholder(movie)
                 }
             }
             .id(movie.id)
@@ -266,6 +251,38 @@ struct ContentView: View {
                     .padding(.vertical, 12)
                     .background(Capsule().fill(Color.red))
             }
+        }
+    }
+
+    private func moviePlaceholder(_ movie: Movie) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(white: 0.15), Color(white: 0.08)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            VStack(spacing: 16) {
+                Image(systemName: "film.stack")
+                    .font(.system(size: 64))
+                    .foregroundColor(.red.opacity(0.6))
+                Text(movie.trackName)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                Text(movie.director)
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.6))
+                HStack(spacing: 12) {
+                    Text(movie.genre)
+                        .font(.system(size: 13, weight: .bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.red.opacity(0.5)))
+                    Text(movie.year)
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                }
+                .foregroundColor(.white)
+            }
+            .padding(40)
         }
     }
 
